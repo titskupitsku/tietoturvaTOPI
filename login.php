@@ -1,22 +1,22 @@
 <?php
 
 include 'connect.php';
-$username = $_POST['username'];
-$password = $_POST['password'];
+$username = $_POST['username'] ?? '';
+$password = $_POST['password'] ?? '';
 
-$sql = "SELECT * FROM users WHERE username = '$username' AND password = '$password';";
+$sql = "SELECT * FROM users WHERE username = ?";
 try {
     $query = $conn->prepare($sql);
-    $query->execute();
+    $query->execute([$username]);
 }
 catch (PDOException $e) {
     $conn = null;
     $query = null;
     die("Virhe: " . $e->getMessage());
 }
-$user = $query->fetchAll();
+$user = $query->fetch(PDO::FETCH_ASSOC);
 
-if (count($user)) {
+if ($user && password_verify($password, $user['password'])) {
     $sql = "SELECT * FROM users;";
     try {
         $query = $conn->prepare($sql);
@@ -31,7 +31,7 @@ if (count($user)) {
     $conn = null;
     $query = null;
     session_start();
-    $_SESSION['user'] = $user[0];
+    $_SESSION['user'] = $user;
     $_SESSION['users'] = $users;
     session_regenerate_id(True);
     header('Location: home.php');
